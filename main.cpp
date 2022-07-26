@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "DiscordWebHook/DiscordWebhook.h"
 using namespace Discord;
 
