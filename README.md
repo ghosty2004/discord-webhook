@@ -26,7 +26,7 @@ int main()
     WebHook::embed embed;
     embed.setTitle("Embed Title");
     embed.setDescription("Embed Description");
-    embed.setURL("Embed URL);
+    embed.setURL("Embed URL");
     embed.setColor(0xAA1144);
     embed.addField("Property Name 1", "Value 1");
     embed.addField("Property Name 2", "Value 2");
