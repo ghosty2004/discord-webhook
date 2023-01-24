@@ -1,4 +1,4 @@
-#include "DiscordWebHook/DiscordWebhook.h"
+#include "DiscordWebHook/DiscordWebHook.h"
 using namespace Discord;
 
 int main() 

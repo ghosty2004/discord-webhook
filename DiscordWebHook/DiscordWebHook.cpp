@@ -76,12 +76,9 @@ void Discord::WebHook::send(std::variant<const char*, Discord::WebHook::embed> v
         }
         case 1: {
             Discord::WebHook::embed embed = std::get<Discord::WebHook::embed>(value);
-            //char embedFields[500];
 			std::string embedFields = "[";
-            //sprintf_s(embedFields, sizeof(embedFields), "[");
             bool first = true;
             for(auto field : embed.getFields()) {
-                //sprintf_s(embedFields, sizeof(embedFields), "%s%s{\"name\": \"%s\", \"value\": \"%s\", \"inline\": %s}", embedFields, !first ? "," : "", field.name, field.value, field.inLine ? "true" : "false");
 				if (first) {
 					embedFields += R"({"name": ")" + std::string(field.name) + R"(", "value: ")" + field.value + R"(", "inline": )" + (field.inLine ? "true}" : "false}");
 					first = false;
@@ -91,8 +88,6 @@ void Discord::WebHook::send(std::variant<const char*, Discord::WebHook::embed> v
 
             }
 			embedFields += "]";
-            //sprintf_s(embedFields, sizeof(embedFields), "%s]", embedFields);
-            //sprintf_s(postFields, sizeof(postFields), "{\"embeds\": [{\"title\": \"%s\", \"description\": \"%s\", \"url\": \"%s\", \"color\": %d, \"fields\": %s}]}", embed.getTitle(), embed.getDescription(), embed.getURL(), embed.getColor(), embedFields);
             postFields = cpr::Body{R"({"embeds": [{"title": ")", embed.getTitle(), R"(", "description": ")", embed.getDescription(), R"(", "url": ")", embed.getURL(), R"(", "color": )", std::to_string(embed.getColor()), R"(, "fields": )", embedFields};
 			break;
         }
