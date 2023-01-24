@@ -1,12 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 project(Discord_WebHook CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_definitions(-DCURL_STATICLIB)
+include(FetchContent)
+FetchContent_Declare(
+		cpr
+		GIT_REPOSITORY https://github.com/libcpr/cpr.git
+		GIT_TAG 47438c7c73d61463520b27759ea58ffb03a31cec
+)
+FetchContent_MakeAvailable(cpr)
 
 add_executable(Discord_WebHook main.cpp DiscordWebHook/DiscordWebHook.cpp)
 
-target_link_libraries(Discord_WebHook ${CMAKE_SOURCE_DIR}/lib/libcurl.dll.a)
-
-configure_file(${CMAKE_SOURCE_DIR}/lib/libcurl-x64.dll ${CMAKE_CURRENT_BINARY_DIR}/Debug COPYONLY) # This is necessary for the "Debug" folder to be able to run the program.
+target_link_libraries(Discord_WebHook cpr::cpr)
