@@ -1,6 +1,5 @@
-#include "curl/curl.h"
-
 #include "DiscordWebHook.h"
+#include "cpr/cpr.h"
 
 #define API_URL "https://discord.com/api/v9/webhooks"
 
@@ -64,48 +63,41 @@ int Discord::WebHook::embed::getColor() {
 
 void Discord::WebHook::send(std::variant<const char*, Discord::WebHook::embed> value) {
     if(this->id == nullptr || this->token == nullptr) return;
-    CURL* curl;
-    CURLcode res;
-    std::string readBuffer;
 
-    curl = curl_easy_init();
-    if(curl) {
-        struct curl_slist *headers = NULL;
-        headers = curl_slist_append(headers, "Content-Type: application/json");
+	cpr::Header header = cpr::Header{{"Content-Type", "application/json"}};
+    cpr::Url url = cpr::Url{API_URL, "/", id, "/", token};
 
-        char url[150];
-        sprintf_s(url, sizeof(url), "%s/%s/%s", API_URL, this->id, this->token);
-
-        char postFields[1000];
-        switch(value.index()) {
-            case 0: {
-                const char* content = std::get<const char*>(value);
-                sprintf_s(postFields, sizeof(postFields), "{\"content\":\"%s\"}", content);
-                break;
-            }
-            case 1: {
-                Discord::WebHook::embed embed = std::get<Discord::WebHook::embed>(value);
-                char embedFields[500];
-                sprintf_s(embedFields, sizeof(embedFields), "[");
-                bool first = true;
-                for(auto value : embed.getFields()) {
-                    sprintf_s(embedFields, sizeof(embedFields), "%s%s{\"name\": \"%s\", \"value\": \"%s\", \"inline\": %s}", embedFields, !first ? "," : "", value.name, value.value, value.inLine ? "true" : "false");
-                    if(first) first = false;
-                }
-                sprintf_s(embedFields, sizeof(embedFields), "%s]", embedFields);
-                sprintf_s(postFields, sizeof(postFields), "{\"embeds\": [{\"title\": \"%s\", \"description\": \"%s\", \"url\": \"%s\", \"color\": %d, \"fields\": %s}]}", embed.getTitle(), embed.getDescription(), embed.getURL(), embed.getColor(), embedFields);
-                break;
-            }
+    cpr::Body postFields;
+    switch(value.index()) {
+        case 0: {
+            const char* content = std::get<const char*>(value);
+			postFields = cpr::Body{R"({"content":")", content, R"("})"};
+            break;
         }
+        case 1: {
+            Discord::WebHook::embed embed = std::get<Discord::WebHook::embed>(value);
+            //char embedFields[500];
+			std::string embedFields = "[";
+            //sprintf_s(embedFields, sizeof(embedFields), "[");
+            bool first = true;
+            for(auto field : embed.getFields()) {
+                //sprintf_s(embedFields, sizeof(embedFields), "%s%s{\"name\": \"%s\", \"value\": \"%s\", \"inline\": %s}", embedFields, !first ? "," : "", field.name, field.value, field.inLine ? "true" : "false");
+				if (first) {
+					embedFields += R"({"name": ")" + std::string(field.name) + R"(", "value: ")" + field.value + R"(", "inline": )" + (field.inLine ? "true}" : "false}");
+					first = false;
+				} else {
+					embedFields += R"(,{"name": ")" + std::string(field.name) + R"(", "value: ")" + field.value + R"(", "inline": )" + (field.inLine ? "true}" : "false}");
+				}
 
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_POST, 1);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-        std::cout << readBuffer << std::endl;
+            }
+			embedFields += "]";
+            //sprintf_s(embedFields, sizeof(embedFields), "%s]", embedFields);
+            //sprintf_s(postFields, sizeof(postFields), "{\"embeds\": [{\"title\": \"%s\", \"description\": \"%s\", \"url\": \"%s\", \"color\": %d, \"fields\": %s}]}", embed.getTitle(), embed.getDescription(), embed.getURL(), embed.getColor(), embedFields);
+            postFields = cpr::Body{R"({"embeds": [{"title": ")", embed.getTitle(), R"(", "description": ")", embed.getDescription(), R"(", "url": ")", embed.getURL(), R"(", "color": )", std::to_string(embed.getColor()), R"(, "fields": )", embedFields};
+			break;
+        }
     }
+
+	cpr::Response response = cpr::Post(url, postFields, header, cpr::VerifySsl{false});
+    std::cout << response.text << std::endl;
 }
